@@ -1,92 +1,135 @@
-# DataMonitor — PoC 3: 저장 데이터 실시간 콘솔 모니터링
+﻿# DataMonitor ??PoC 3: ????곗씠???ㅼ떆媛?肄섏넄 紐⑤땲?곕쭅
 
-반도체 시료 생산주문관리 시스템의 `data/` 디렉터리를 읽어
-**시료 재고 현황**과 **주문 상태 집계**를 콘솔에 실시간으로 표시하는 모니터링 도구입니다.
-
----
-
-## 목차
-
-1. [DataMonitor란?](#1-datamonitor란)
-2. [이 프로젝트의 레이어 구조](#2-이-프로젝트의-레이어-구조)
-3. [각 레이어 코드 설명](#3-각-레이어-코드-설명)
-4. [코드 동작 흐름](#4-코드-동작-흐름)
-5. [테스트 하네스](#5-테스트-하네스-tdd)
-6. [프로젝트 구조](#6-프로젝트-구조)
-7. [빌드 및 실행](#7-빌드-및-실행)
-8. [입출력 예시](#8-입출력-예시)
+諛섎룄泥??쒕즺 ?앹궛二쇰Ц愿由??쒖뒪?쒖쓽 `data/` ?붾젆?곕━瑜??쎌뼱
+**?쒕즺 ?ш퀬 ?꾪솴**怨?**二쇰Ц ?곹깭 吏묎퀎**瑜?肄섏넄???ㅼ떆媛꾩쑝濡??쒖떆?섎뒗 紐⑤땲?곕쭅 ?꾧뎄?낅땲??
 
 ---
 
-## 1. DataMonitor란?
+## 紐⑹감
 
-본 프로젝트(SampleOrderSystem)의 `data/` 폴더에 있는 JSON 파일을 **읽기 전용**으로 조회하여,
-운영 현황을 콘솔 대시보드 형태로 출력합니다.
+1. [DataMonitor??](#1-datamonitor?)
+2. [?듭떖 ?숈뒿 ?ъ씤??(#2-?듭떖-?숈뒿-?ъ씤??
+3. [???꾨줈?앺듃???덉씠??援ъ“](#3-???꾨줈?앺듃???덉씠??援ъ“)
+4. [媛??덉씠??肄붾뱶 ?ㅻ챸](#4-媛??덉씠??肄붾뱶-?ㅻ챸)
+5. [肄붾뱶 ?숈옉 ?먮쫫](#5-肄붾뱶-?숈옉-?먮쫫)
+6. [?뚯뒪???섎꽕??(#6-?뚯뒪???섎꽕??tdd)
+7. [?꾨줈?앺듃 援ъ“](#7-?꾨줈?앺듃-援ъ“)
+8. [鍮뚮뱶 諛??ㅽ뻾](#8-鍮뚮뱶-諛??ㅽ뻾)
+9. [?낆텧???덉떆](#9-?낆텧???덉떆)
+
+---
+
+## 1. DataMonitor??
+
+蹂??꾨줈?앺듃(SampleOrderSystem)??`data/` ?대뜑???덈뒗 JSON ?뚯씪??**?쎄린 ?꾩슜**?쇰줈 議고쉶?섏뿬,
+?댁쁺 ?꾪솴??肄섏넄 ??쒕낫???뺥깭濡?異쒕젰?⑸땲??
 
 ```
 ====================================================================
- S-Semi 데이터 모니터  |  2026-07-15 10:32:15  |  [R] 새로고침  [Q] 종료
+ S-Semi ?곗씠??紐⑤땲?? |  2026-07-15 10:32:15  |  [R] ?덈줈怨좎묠  [Q] 醫낅즺
 ====================================================================
- [주문 현황]
+ [二쇰Ц ?꾪솴]
 --------------------------------------------------------------------
   RESERVED    PRODUCING   CONFIRMED   RELEASE
       5            2           3         10
 ====================================================================
- [시료 재고 현황]
+ [?쒕즺 ?ш퀬 ?꾪솴]
 --------------------------------------------------------------------
-  ID       시료명                  재고    상태  재고바
-  S-001    실리콘 웨이퍼-8인치      480     여유  ################
-  S-002    GaN 기판                   0     고갈  ................
-  S-003    SiC 기판                  50     부족  ####............
+  ID       ?쒕즺紐?                 ?ш퀬    ?곹깭  ?ш퀬諛?  S-001    ?ㅻ━肄??⑥씠??8?몄튂      480     ?ъ쑀  ################
+  S-002    GaN 湲고뙋                   0     怨좉컝  ................
+  S-003    SiC 湲고뙋                  50     遺議? ####............
 ====================================================================
- 경로: .\data  |  자동갱신: 3초
-====================================================================
+ 寃쎈줈: .\data  |  ?먮룞媛깆떊: 3珥?====================================================================
 ```
 
-**핵심 연관도**: 본 프로젝트 `data/samples.json`, `data/orders.json` 직접 읽음
+**?듭떖 ?곌???*: 蹂??꾨줈?앺듃 `data/samples.json`, `data/orders.json` 吏곸젒 ?쎌쓬
 
 ---
 
-## 2. 이 프로젝트의 레이어 구조
+## 2. ?듭떖 ?숈뒿 ?ъ씤??
+### ??PoC?먯꽌 ?ㅻ（??C++ 媛쒕뀗
 
-```
-┌──────────────────────────────────────────────────────┐
-│  MonitorView                                         │
-│  · 대시보드 출력 (cout 전담)                         │
-│  · 재고 바, 상태 레이블, 시간 포맷                   │
-└───────────────────┬──────────────────────────────────┘
-                    │ 데이터 전달
-┌───────────────────▼──────────────────────────────────┐
-│  MonitorController                                   │
-│  · 비즈니스 로직: calcStockStatus, aggregateOrders   │
-│  · 자동/수동 갱신 루프 (3초 주기, R키 수동)          │
-└─────────────┬─────────────────┬─────────────────────┘
-              │                 │
-┌─────────────▼──┐   ┌──────────▼──────────┐
-│ SampleRepository│   │  OrderRepository    │
-│ samples.json 읽기│   │  orders.json 읽기   │
-└─────────────┬──┘   └──────────┬──────────┘
-              │                 │
-┌─────────────▼──┐   ┌──────────▼──────────┐
-│  Sample (struct)│   │   Order (struct)    │
-│  fromJson()     │   │   fromJson()        │
-│                 │   │   statusFromString()│
-└─────────────────┘   └────────────────────┘
-```
+| 媛쒕뀗 | ?ㅻ챸 | ?ъ슜??怨?|
+|---|---|---|
+| `std::filesystem` | ?뚯씪 議댁옱 ?щ? ?뺤씤, 寃쎈줈 議고빀 | `SampleRepository::findAll` |
+| `nlohmann::json::parse` (no-throw) | ?뚯떛 ?ㅽ뙣 ??crash ?놁씠 `discarded` 諛섑솚 | `SampleRepository`, `OrderRepository` |
+| `enum class` | ????덉쟾???곹깭 ?닿굅 (`OrderStatus`) | `Order.h` |
+| Windows Console API | `GetNumberOfConsoleInputEvents`, `ReadConsoleInput` | `MonitorController::run` |
+| `GetFileType(FILE_TYPE_CHAR)` | ?몃뱾???ㅼ젣 肄섏넄?몄? ?뚯씠?꾩씤吏 ?먮퀎 | `MonitorController::run` |
+| `FillConsoleOutputCharacter` | 肄섏넄 踰꾪띁 ?꾩껜瑜?怨듬갚?쇰줈 梨꾩썙 源쒕묀???놁씠 ?붾㈃ 媛깆떊 | `MonitorView::printDashboard` |
+| `#define NOMINMAX` | Windows `min/max` 留ㅽ겕濡쒓? `std::clamp`쨌`std::max`? 異⑸룎?섎뒗 寃?諛⑹? | 紐⑤뱺 windows.h ?ы븿 ?뚯씪 |
 
 ---
 
-## 3. 각 레이어 코드 설명
+### ?ㅺ퀎 寃곗젙 ?ы빆
 
-### 3-1. Model — `Sample` / `Order`
+- **`_kbhit()` ???`GetNumberOfConsoleInputEvents` ?ъ슜**
+  - `_kbhit()`? 留덉슦???대룞쨌李??ш린 蹂寃?媛숈? 鍮꾪궎蹂대뱶 ?대깽?몄뿉??`true`瑜?諛섑솚??  - 吏곹썑 `_getch()`媛 ?ㅼ젣 ???낅젰???녿뒗 ?곹깭?먯꽌 臾댄븳 釉붾줈?????꾨━利?諛쒖깮
+  - `GetNumberOfConsoleInputEvents`??踰꾪띁???덈뒗 ?대깽???섎? ?쇰툝濡쒗궧?쇰줈 諛섑솚?섎?濡??뺥솗??洹??섎쭔?쇰쭔 `ReadConsoleInput` ?몄텧 ??釉붾줈???놁쓬
+
+- **?쎄린 ?꾩슜 Repository ?ㅺ퀎**
+  - 紐⑤땲?곕뒗 ?곗씠?곕? ?덈? 蹂寃쏀븯吏 ?딆븘???섎?濡?`save()`, `update()` ?놁씠 `findAll()` ?섎굹留??몄텧
+  - ?ㅼ닔濡??곗씠?곕? ??뼱?곕뒗 寃껋쓣 而댄뙆????꾩뿉 李⑤떒
+
+- **?뚯씪 ?놁쓬쨌?뚯떛 ?ㅻ쪟 ?덉쟾 泥섎━**
+  - `!fs::exists(file)` 泥댄겕 ??鍮?踰≫꽣 諛섑솚 ???뚯씪???놁뼱???꾨줈洹몃옩??二쎌? ?딆쓬
+  - `nlohmann::json::parse(f, nullptr, false)` ????踰덉㎏ ?몄옄 `false`媛 ?덉쇅 ???`discarded` 諛섑솚???섎?
+  - `j.is_discarded()` 泥댄겕 ??JSON??源⑥졇???덉쟾?섍쾶 鍮?紐⑸줉 諛섑솚
+
+- **`SetConsoleCursorPosition(0,0)` ?⑤룆 ?ъ슜 湲덉?**
+  - 肄섏넄???ㅽ겕濡ㅻ맂 ?곹깭?먯꽌??而ㅼ꽌留???꺼吏?肉?湲곗〈 ?댁슜???⑥븘 異쒕젰???욎엫
+  - `FillConsoleOutputCharacter`濡?踰꾪띁 ?꾩껜瑜?怨듬갚?쇰줈 梨꾩슫 ??而ㅼ꽌 蹂듦??댁빞 源붾걫?섍쾶 媛깆떊
+
+---
+
+### ?뷀븳 ?ㅼ닔 / 二쇱쓽?ы빆
+
+- **`ReadConsoleInput`???대깽?????뺤씤 ?놁씠 諛붾줈 ?몄텧?섎㈃ ????*
+  踰꾪띁媛 鍮꾩뼱 ?덉쑝硫??ㅼ쓬 ?대깽?멸퉴吏 臾댄븳 ?湲????꾨━利?
+  諛섎뱶??`GetNumberOfConsoleInputEvents`濡?媛쒖닔 ?뺤씤 ??洹??섎쭔?쇰쭔 ?몄텧??寃?
+
+- **`windows.h` ?ы븿 ??`#define NOMINMAX` ?꾩닔**
+  Windows SDK媛 `min`, `max`瑜?留ㅽ겕濡쒕줈 ?뺤쓽?섍린 ?뚮Ц??`std::max`, `std::clamp` ?깃낵 ?대쫫 異⑸룎. 媛?`.cpp` ?뚯씪留덈떎 `windows.h` ?욎뿉 ?좎뼵?댁빞 ??
+
+- **肄섏넄 ?몃뱾???꾨땺 ???덉쓬????긽 媛?뺥븷 寃?*
+  VS ?붾쾭嫄? CI ?뚯씠?꾨씪?? 由щ떎?대젆???섍꼍?먯꽌??`GetStdHandle`???뚯씠???몃뱾??諛섑솚.
+  `GetFileType(hIn) == FILE_TYPE_CHAR`濡?癒쇱? ?뺤씤?섍퀬, 肄섏넄???꾨땲硫?`ReadConsoleInput` ?몄텧 ?먯껜瑜?嫄대꼫??寃?
+
+- **紐⑤땲???꾧뎄?먯꽌 `data/` ?뚯씪???덈? ?곗? 留?寃?*
+  蹂??꾨줈?앺듃? 媛숈? `data/`瑜?怨듭쑀?섍린 ?뚮Ц?? ?ㅼ닔濡?`ofstream`???대㈃ ?먮낯 ?곗씠?곌? ?먯긽??
+
+---
+
+### 蹂??꾨줈?앺듃(SampleOrderSystem)????곌?
+
+| ??PoC?먯꽌 寃利앺븳 ?댁슜 | 蹂??꾨줈?앺듃 ?곸슜 ?꾩튂 |
+|---|---|
+| `samples.json` / `orders.json` ?ㅽ궎留?洹몃?濡??뚯떛 | `SampleRepository`, `OrderRepository` ?숈씪 ?ㅽ궎留??ъ궗??|
+| ?ш퀬 ?곹깭 ?먯젙 濡쒖쭅 (?ъ쑀/遺議?怨좉컝) | 紐⑤땲?곕쭅 硫붾돱 `[4]` ?ш퀬 ?꾪솴 ?쒖떆???숈씪 濡쒖쭅 ?곸슜 |
+| REJECTED 二쇰Ц 吏묎퀎 ?쒖쇅 | 紐⑤땲?곕쭅?먯꽌 REJECTED???뺤긽 ?먮쫫 ??泥섎━濡?蹂꾨룄 ?쒓린 |
+| ?쎄린 ?꾩슜 Repository ?⑦꽩 | 紐⑤땲?곕쭅 ?붾㈃? ?곗씠??蹂寃??놁씠 議고쉶留??섑뻾 |
+
+---
+
+## 3. ???꾨줈?앺듃???덉씠??援ъ“
+
+```
+?뚢?????????????????????????????????????????????????????????? MonitorView                                         ???? 쨌 ??쒕낫??異쒕젰 (cout ?꾨떞)                         ???? 쨌 ?ш퀬 諛? ?곹깭 ?덉씠釉? ?쒓컙 ?щ㎎                   ???붴????????????????????р????????????????????????????????????                    ???곗씠???꾨떖
+?뚢????????????????????쇄?????????????????????????????????????? MonitorController                                   ???? 쨌 鍮꾩쫰?덉뒪 濡쒖쭅: calcStockStatus, aggregateOrders   ???? 쨌 ?먮룞/?섎룞 媛깆떊 猷⑦봽 (3珥?二쇨린, R???섎룞)          ???붴??????????????р??????????????????р???????????????????????              ??                ???뚢??????????????쇄????  ?뚢???????????쇄??????????????SampleRepository??  ?? OrderRepository    ????samples.json ?쎄린??  ?? orders.json ?쎄린   ???붴??????????????р????  ?붴???????????р????????????              ??                ???뚢??????????????쇄????  ?뚢???????????쇄?????????????? Sample (struct)??  ??  Order (struct)    ???? fromJson()     ??  ??  fromJson()        ????                ??  ??  statusFromString()???붴???????????????????  ?붴??????????????????????```
+
+---
+
+## 3. 媛??덉씠??肄붾뱶 ?ㅻ챸
+
+### 3-1. Model ??`Sample` / `Order`
 
 ```cpp
 struct Sample {
     std::string id;               // "S-001"
-    std::string name;             // "실리콘 웨이퍼-8인치"
+    std::string name;             // "?ㅻ━肄??⑥씠??8?몄튂"
     double      avgProductionTime; // 0.5 (min/ea)
-    double      yieldRate;        // 0.92 (수율)
-    int         stock;            // 480 (재고)
+    double      yieldRate;        // 0.92 (?섏쑉)
+    int         stock;            // 480 (?ш퀬)
 
     static Sample fromJson(const nlohmann::json& j);
 };
@@ -111,31 +154,31 @@ struct Order {
 
 ---
 
-### 3-2. Repository — 읽기 전용
+### 3-2. Repository ???쎄린 ?꾩슜
 
 ```cpp
-// SampleRepository: dataPath/samples.json → vector<Sample>
+// SampleRepository: dataPath/samples.json ??vector<Sample>
 std::vector<Sample> SampleRepository::findAll(const std::string& dataPath) const {
     fs::path file = fs::path(dataPath) / "samples.json";
-    if (!fs::exists(file)) return {};           // 파일 없으면 빈 목록
+    if (!fs::exists(file)) return {};           // ?뚯씪 ?놁쑝硫?鍮?紐⑸줉
     auto j = nlohmann::json::parse(f, nullptr, false);
-    if (j.is_discarded()) return {};            // 파싱 실패도 안전 처리
+    if (j.is_discarded()) return {};            // ?뚯떛 ?ㅽ뙣???덉쟾 泥섎━
     // ...
 }
 ```
 
-- **쓰기 없음**: 모니터는 읽기 전용 — `save()`, `update()` 없음
-- **파일 없음 안전 처리**: 파일이 없거나 JSON이 깨져도 빈 목록 반환 (crash 없음)
+- **?곌린 ?놁쓬**: 紐⑤땲?곕뒗 ?쎄린 ?꾩슜 ??`save()`, `update()` ?놁쓬
+- **?뚯씪 ?놁쓬 ?덉쟾 泥섎━**: ?뚯씪???녾굅??JSON??源⑥졇??鍮?紐⑸줉 諛섑솚 (crash ?놁쓬)
 
 ---
 
-### 3-3. Controller — 비즈니스 로직
+### 3-3. Controller ??鍮꾩쫰?덉뒪 濡쒖쭅
 
-**재고 상태 판정** (PRD 정의 그대로 구현):
+**?ш퀬 ?곹깭 ?먯젙** (PRD ?뺤쓽 洹몃?濡?援ы쁽):
 
 ```cpp
 StockStatus MonitorController::calcStockStatus(const Sample& s, const std::vector<Order>& orders) {
-    if (s.stock == 0) return StockStatus::DEPLETED;   // 고갈
+    if (s.stock == 0) return StockStatus::DEPLETED;   // 怨좉컝
 
     int pending = 0;
     for (const auto& o : orders) {
@@ -145,35 +188,35 @@ StockStatus MonitorController::calcStockStatus(const Sample& s, const std::vecto
         }
     }
     return s.stock > pending ? StockStatus::SURPLUS : StockStatus::SHORTAGE;
-    //     여유: stock > 미처리 합산     부족: stock <= 미처리 합산
+    //     ?ъ쑀: stock > 誘몄쿂由??⑹궛     遺議? stock <= 誘몄쿂由??⑹궛
 }
 ```
 
-**주문 집계** (REJECTED 제외):
+**二쇰Ц 吏묎퀎** (REJECTED ?쒖쇅):
 
 ```cpp
 std::map<OrderStatus, int> MonitorController::aggregateOrders(const std::vector<Order>& orders) {
-    std::map<OrderStatus, int> counts{ /* 0으로 초기화 */ };
+    std::map<OrderStatus, int> counts{ /* 0?쇰줈 珥덇린??*/ };
     for (const auto& o : orders) {
-        if (o.status != OrderStatus::REJECTED)  // REJECTED 모니터링 제외
+        if (o.status != OrderStatus::REJECTED)  // REJECTED 紐⑤땲?곕쭅 ?쒖쇅
             counts[o.status]++;
     }
     return counts;
 }
 ```
 
-**자동 갱신 루프**:
+**?먮룞 媛깆떊 猷⑦봽**:
 
 ```cpp
 void MonitorController::run() {
     while (true) {
-        refresh();                                  // 화면 갱신
-        for (int i = 0; i < 30; ++i) {             // 3초 = 100ms × 30
+        refresh();                                  // ?붾㈃ 媛깆떊
+        for (int i = 0; i < 30; ++i) {             // 3珥?= 100ms 횞 30
             Sleep(100);
             if (_kbhit()) {
                 char c = _getch();
-                if (c == 'q' || c == 'Q') return;  // 종료
-                if (c == 'r' || c == 'R') break;   // 수동 새로고침
+                if (c == 'q' || c == 'Q') return;  // 醫낅즺
+                if (c == 'r' || c == 'R') break;   // ?섎룞 ?덈줈怨좎묠
             }
         }
     }
@@ -182,19 +225,17 @@ void MonitorController::run() {
 
 ---
 
-### 3-4. View — 출력 전담
+### 3-4. View ??異쒕젰 ?꾨떞
 
 ```cpp
 void MonitorView::printDashboard(...) const {
-    // 커서를 (0,0)으로 이동 → 화면 깜빡임 없는 갱신
+    // 而ㅼ꽌瑜?(0,0)?쇰줈 ?대룞 ???붾㈃ 源쒕묀???녿뒗 媛깆떊
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), {0, 0});
 
-    // 주문 현황 테이블
-    // 시료별: ID | 이름 | 재고 | 상태(여유/부족/고갈) | 재고바(# . 문자)
+    // 二쇰Ц ?꾪솴 ?뚯씠釉?    // ?쒕즺蹂? ID | ?대쫫 | ?ш퀬 | ?곹깭(?ъ쑀/遺議?怨좉컝) | ?ш퀬諛?# . 臾몄옄)
 }
 
-// 재고 바: stock/maxStock 비율로 '#' 채우기
-std::string MonitorView::stockBar(int stock, int maxStock) const {
+// ?ш퀬 諛? stock/maxStock 鍮꾩쑉濡?'#' 梨꾩슦湲?std::string MonitorView::stockBar(int stock, int maxStock) const {
     int filled = (int)(16.0 * stock / maxStock);
     return std::string(filled, '#') + std::string(16 - filled, '.');
 }
@@ -202,301 +243,276 @@ std::string MonitorView::stockBar(int stock, int maxStock) const {
 
 ---
 
-## 4. 코드 동작 흐름
+## 4. 肄붾뱶 ?숈옉 ?먮쫫
 
-### 시작 ~ 첫 화면 표시
-
-```
-main() 실행
-  │
-  ├─ --test 인자 → 테스트 모드 (runAllTests())
-  │
-  └─ --path <경로> 파싱 (기본값: .\data)
-       │
-       ▼
-MonitorController::run()
-  │
-  └─ refresh() 호출 (매 갱신마다)
-       │
-       ├─ SampleRepository::findAll(dataPath)   ← samples.json 읽기
-       ├─ OrderRepository::findAll(dataPath)     ← orders.json 읽기
-       ├─ aggregateOrders(orders)                ← 상태별 카운트
-       └─ MonitorView::printDashboard(...)       ← 대시보드 출력
-```
-
-### 갱신 루프
+### ?쒖옉 ~ 泥??붾㈃ ?쒖떆
 
 ```
-refresh() 완료
-  │
-  └─ 100ms 단위 대기 루프 (최대 3초)
-       │
-       ├─ R 키 → 즉시 refresh() 재호출
-       ├─ Q 키 → 종료
-       └─ 3초 경과 → 자동 refresh() 재호출
+main() ?ㅽ뻾
+  ??  ?쒋? --test ?몄옄 ???뚯뒪??紐⑤뱶 (runAllTests())
+  ??  ?붴? --path <寃쎈줈> ?뚯떛 (湲곕낯媛? .\data)
+       ??       ??MonitorController::run()
+  ??  ?붴? refresh() ?몄텧 (留?媛깆떊留덈떎)
+       ??       ?쒋? SampleRepository::findAll(dataPath)   ??samples.json ?쎄린
+       ?쒋? OrderRepository::findAll(dataPath)     ??orders.json ?쎄린
+       ?쒋? aggregateOrders(orders)                ???곹깭蹂?移댁슫??       ?붴? MonitorView::printDashboard(...)       ????쒕낫??異쒕젰
 ```
 
-### 재고 상태 판정 흐름
+### 媛깆떊 猷⑦봽
+
+```
+refresh() ?꾨즺
+  ??  ?붴? 100ms ?⑥쐞 ?湲?猷⑦봽 (理쒕? 3珥?
+       ??       ?쒋? R ????利됱떆 refresh() ?ы샇異?       ?쒋? Q ????醫낅즺
+       ?붴? 3珥?寃쎄낵 ???먮룞 refresh() ?ы샇異?```
+
+### ?ш퀬 ?곹깭 ?먯젙 ?먮쫫
 
 ```
 Sample S-001 (stock=100)
-  │
-  ├─ stock == 0? → 고갈
-  │
-  └─ 주문 목록에서 sampleId == "S-001" 이고
-     status == RESERVED or CONFIRMED 인 quantity 합산
+  ??  ?쒋? stock == 0? ??怨좉컝
+  ??  ?붴? 二쇰Ц 紐⑸줉?먯꽌 sampleId == "S-001" ?닿퀬
+     status == RESERVED or CONFIRMED ??quantity ?⑹궛
        pending = 200
-       │
-       ├─ stock(100) > pending(200)? → NO → 부족
-       └─ stock > pending? → YES → 여유
+       ??       ?쒋? stock(100) > pending(200)? ??NO ??遺議?       ?붴? stock > pending? ??YES ???ъ쑀
 ```
 
 ---
 
-## 5. 테스트 하네스 (TDD)
+## 5. ?뚯뒪???섎꽕??(TDD)
 
-`--test` 인자로 테스트 모드 실행. 총 **16개** 테스트 케이스.
+`--test` ?몄옄濡??뚯뒪??紐⑤뱶 ?ㅽ뻾. 珥?**16媛?* ?뚯뒪??耳?댁뒪.
 
 ```
 DataMonitor.exe --test
 
-=== 테스트 실행 ===
-[PASS] Sample::fromJson - 전체 필드 파싱
-[PASS] Sample::fromJson - stock 0 처리
+=== ?뚯뒪???ㅽ뻾 ===
+[PASS] Sample::fromJson - ?꾩껜 ?꾨뱶 ?뚯떛
+[PASS] Sample::fromJson - stock 0 泥섎━
 [PASS] Order::statusFromString - RESERVED
 ...
-[PASS] calcStockStatus - 경계값: stock == 미처리 합산 → 부족
-[PASS] aggregateOrders - 상태별 카운트
-[PASS] aggregateOrders - 빈 목록
+[PASS] calcStockStatus - 寃쎄퀎媛? stock == 誘몄쿂由??⑹궛 ??遺議?[PASS] aggregateOrders - ?곹깭蹂?移댁슫??[PASS] aggregateOrders - 鍮?紐⑸줉
 
-결과: 16 통과 / 0 실패
+寃곌낵: 16 ?듦낵 / 0 ?ㅽ뙣
 ```
 
-**테스트 파일 구성**:
+**?뚯뒪???뚯씪 援ъ꽦**:
 
-| 파일 | 테스트 대상 | 케이스 수 |
+| ?뚯씪 | ?뚯뒪?????| 耳?댁뒪 ??|
 |---|---|---|
 | `test/SampleTest.cpp` | Sample::fromJson | 2 |
 | `test/OrderTest.cpp` | Order::fromJson, statusFromString, statusToString | 7 |
-| `test/MonitorControllerTest.cpp` | calcStockStatus (고갈/여유/부족/경계), aggregateOrders | 7 |
+| `test/MonitorControllerTest.cpp` | calcStockStatus (怨좉컝/?ъ쑀/遺議?寃쎄퀎), aggregateOrders | 7 |
 
-**TestRunner 구조**:
+**TestRunner 援ъ“**:
 
 ```cpp
-// TEST 매크로 → 전역 레지스트리에 자동 등록
-TEST("calcStockStatus - 고갈: stock == 0") {
-    Sample s{"S-001", "웨이퍼", 0.5, 0.92, 0};
+// TEST 留ㅽ겕濡????꾩뿭 ?덉??ㅽ듃由ъ뿉 ?먮룞 ?깅줉
+TEST("calcStockStatus - 怨좉컝: stock == 0") {
+    Sample s{"S-001", "?⑥씠??, 0.5, 0.92, 0};
     ASSERT_TRUE(MonitorController::calcStockStatus(s, {}) == StockStatus::DEPLETED);
 }
 
-// main()에서 --test 시 실행
+// main()?먯꽌 --test ???ㅽ뻾
 int runAllTests();
 ```
 
 ---
 
-## 6. 프로젝트 구조
+## 6. ?꾨줈?앺듃 援ъ“
 
 ```
 DataMonitor-JOYUSIK-21044893/
-├── DataMonitor/
-│   ├── DataMonitor.vcxproj          ← VS 프로젝트 (Debug/Release x64)
-│   ├── DataMonitor.vcxproj.filters
-│   ├── main.cpp                     ← 진입점, --path / --test 처리
-│   ├── model/
-│   │   ├── Sample.h / Sample.cpp    ← 시료 데이터 구조
-│   │   └── Order.h / Order.cpp      ← 주문 데이터 구조 + OrderStatus enum
-│   ├── repository/
-│   │   ├── SampleRepository.h/.cpp  ← samples.json 읽기
-│   │   └── OrderRepository.h/.cpp   ← orders.json 읽기
-│   ├── view/
-│   │   └── MonitorView.h/.cpp       ← 대시보드 출력 (cout 전담)
-│   ├── controller/
-│   │   └── MonitorController.h/.cpp ← 비즈니스 로직 + 갱신 루프
-│   ├── test/
-│   │   ├── TestRunner.h             ← 경량 테스트 하네스
-│   │   ├── SampleTest.cpp
-│   │   ├── OrderTest.cpp
-│   │   └── MonitorControllerTest.cpp
-│   ├── third_party/
-│   │   └── json.hpp                 ← nlohmann/json 3.11.3
-│   └── data/                        ← 런타임 참조 (git 제외)
-├── .gitignore
-└── README.md
+?쒋?? DataMonitor/
+??  ?쒋?? DataMonitor.vcxproj          ??VS ?꾨줈?앺듃 (Debug/Release x64)
+??  ?쒋?? DataMonitor.vcxproj.filters
+??  ?쒋?? main.cpp                     ??吏꾩엯?? --path / --test 泥섎━
+??  ?쒋?? model/
+??  ??  ?쒋?? Sample.h / Sample.cpp    ???쒕즺 ?곗씠??援ъ“
+??  ??  ?붴?? Order.h / Order.cpp      ??二쇰Ц ?곗씠??援ъ“ + OrderStatus enum
+??  ?쒋?? repository/
+??  ??  ?쒋?? SampleRepository.h/.cpp  ??samples.json ?쎄린
+??  ??  ?붴?? OrderRepository.h/.cpp   ??orders.json ?쎄린
+??  ?쒋?? view/
+??  ??  ?붴?? MonitorView.h/.cpp       ????쒕낫??異쒕젰 (cout ?꾨떞)
+??  ?쒋?? controller/
+??  ??  ?붴?? MonitorController.h/.cpp ??鍮꾩쫰?덉뒪 濡쒖쭅 + 媛깆떊 猷⑦봽
+??  ?쒋?? test/
+??  ??  ?쒋?? TestRunner.h             ??寃쎈웾 ?뚯뒪???섎꽕????  ??  ?쒋?? SampleTest.cpp
+??  ??  ?쒋?? OrderTest.cpp
+??  ??  ?붴?? MonitorControllerTest.cpp
+??  ?쒋?? third_party/
+??  ??  ?붴?? json.hpp                 ??nlohmann/json 3.11.3
+??  ?붴?? data/                        ???고???李몄“ (git ?쒖쇅)
+?쒋?? .gitignore
+?붴?? README.md
 ```
 
 ---
 
-## 7. 빌드 및 실행
+## 7. 鍮뚮뱶 諛??ㅽ뻾
 
-### Visual Studio에서 열기
+### Visual Studio?먯꽌 ?닿린
 
-1. `파일 > 열기 > 프로젝트/솔루션`
-2. `DataMonitor\DataMonitor.vcxproj` 선택
-3. **F7** 빌드
+1. `?뚯씪 > ?닿린 > ?꾨줈?앺듃/?붾（??
+2. `DataMonitor\DataMonitor.vcxproj` ?좏깮
+3. **F7** 鍮뚮뱶
 
-### 실행
+### ?ㅽ뻾
 
 ```powershell
-# 기본 경로(.\data) 모니터링
+# 湲곕낯 寃쎈줈(.\data) 紐⑤땲?곕쭅
 .\DataMonitor\x64\Release\DataMonitor.exe
 
-# 본 프로젝트 data 경로 지정
-.\DataMonitor\x64\Release\DataMonitor.exe --path "C:\...\SampleOrderSystem-JOYUSIK-21044893\data"
+# 蹂??꾨줈?앺듃 data 寃쎈줈 吏??.\DataMonitor\x64\Release\DataMonitor.exe --path "C:\...\SampleOrderSystem-JOYUSIK-21044893\data"
 
-# 테스트 실행
+# ?뚯뒪???ㅽ뻾
 .\DataMonitor\x64\Release\DataMonitor.exe --test
 ```
 
-### 키 조작
+### ??議곗옉
 
-| 키 | 동작 |
+| ??| ?숈옉 |
 |---|---|
-| `R` | 즉시 수동 새로고침 |
-| `Q` | 종료 |
-| 자동 | 3초마다 자동 갱신 |
+| `R` | 利됱떆 ?섎룞 ?덈줈怨좎묠 |
+| `Q` | 醫낅즺 |
+| ?먮룞 | 3珥덈쭏???먮룞 媛깆떊 |
 
 ---
 
-## 8. 입출력 예시
+## 8. ?낆텧???덉떆
 
-### 케이스 A — 데이터 파일 없음 (초기 상태)
+### 耳?댁뒪 A ???곗씠???뚯씪 ?놁쓬 (珥덇린 ?곹깭)
 
-**입력**: `DataMonitor.exe` (인자 없음)
+**?낅젰**: `DataMonitor.exe` (?몄옄 ?놁쓬)
 
 ```
-DataMonitor 시작 (경로: .\data)
+DataMonitor ?쒖옉 (寃쎈줈: .\data)
 ====================================================================
- S-Semi 데이터 모니터  |  2026-07-15 11:18:00  |  [R] 새로고침  [Q] 종료
+ S-Semi ?곗씠??紐⑤땲?? |  2026-07-15 11:18:00  |  [R] ?덈줈怨좎묠  [Q] 醫낅즺
 ====================================================================
- [주문 현황]
+ [二쇰Ц ?꾪솴]
 --------------------------------------------------------------------
   RESERVED    PRODUCING   CONFIRMED   RELEASE
   0           0           0           0
 ====================================================================
- [시료 재고 현황]
+ [?쒕즺 ?ш퀬 ?꾪솴]
 --------------------------------------------------------------------
-  데이터 없음 (경로: .\data\samples.json)
+  ?곗씠???놁쓬 (寃쎈줈: .\data\samples.json)
 ====================================================================
- 경로: .\data  |  자동갱신: 3초
-====================================================================
+ 寃쎈줈: .\data  |  ?먮룞媛깆떊: 3珥?====================================================================
 ```
 
-> `data/samples.json` 또는 `data/orders.json`이 없으면 "데이터 없음"으로 안전하게 표시됩니다.
+> `data/samples.json` ?먮뒗 `data/orders.json`???놁쑝硫?"?곗씠???놁쓬"?쇰줈 ?덉쟾?섍쾶 ?쒖떆?⑸땲??
 
 ---
 
-### 케이스 B — 데이터 있음 (정상 운영 상태)
+### 耳?댁뒪 B ???곗씠???덉쓬 (?뺤긽 ?댁쁺 ?곹깭)
 
 **`data/samples.json`**:
 ```json
 [
-  {"id": "S-001", "name": "실리콘 웨이퍼-8인치", "avg_production_time": 0.5, "yield_rate": 0.92, "stock": 480},
-  {"id": "S-002", "name": "GaN 기판",             "avg_production_time": 1.2, "yield_rate": 0.85, "stock": 0},
-  {"id": "S-003", "name": "SiC 기판",             "avg_production_time": 0.8, "yield_rate": 0.90, "stock": 50}
+  {"id": "S-001", "name": "?ㅻ━肄??⑥씠??8?몄튂", "avg_production_time": 0.5, "yield_rate": 0.92, "stock": 480},
+  {"id": "S-002", "name": "GaN 湲고뙋",             "avg_production_time": 1.2, "yield_rate": 0.85, "stock": 0},
+  {"id": "S-003", "name": "SiC 湲고뙋",             "avg_production_time": 0.8, "yield_rate": 0.90, "stock": 50}
 ]
 ```
 
 **`data/orders.json`**:
 ```json
 [
-  {"order_id": "ORD-20260715-0001", "sample_id": "S-001", "customer": "삼성전자", "quantity": 100, "status": "RESERVED",  "created_at": "2026-07-15T09:00:00"},
-  {"order_id": "ORD-20260715-0002", "sample_id": "S-001", "customer": "SK하이닉스","quantity": 200, "status": "CONFIRMED", "created_at": "2026-07-15T09:10:00"},
-  {"order_id": "ORD-20260715-0003", "sample_id": "S-002", "customer": "LG이노텍",  "quantity": 300, "status": "PRODUCING", "created_at": "2026-07-15T09:20:00"},
-  {"order_id": "ORD-20260715-0004", "sample_id": "S-003", "customer": "DB하이텍",  "quantity": 80,  "status": "RELEASE",   "created_at": "2026-07-15T09:30:00"},
-  {"order_id": "ORD-20260715-0005", "sample_id": "S-001", "customer": "매그나칩",  "quantity": 50,  "status": "REJECTED",  "created_at": "2026-07-15T09:40:00"}
+  {"order_id": "ORD-20260715-0001", "sample_id": "S-001", "customer": "?쇱꽦?꾩옄", "quantity": 100, "status": "RESERVED",  "created_at": "2026-07-15T09:00:00"},
+  {"order_id": "ORD-20260715-0002", "sample_id": "S-001", "customer": "SK?섏씠?됱뒪","quantity": 200, "status": "CONFIRMED", "created_at": "2026-07-15T09:10:00"},
+  {"order_id": "ORD-20260715-0003", "sample_id": "S-002", "customer": "LG?대끂??,  "quantity": 300, "status": "PRODUCING", "created_at": "2026-07-15T09:20:00"},
+  {"order_id": "ORD-20260715-0004", "sample_id": "S-003", "customer": "DB?섏씠??,  "quantity": 80,  "status": "RELEASE",   "created_at": "2026-07-15T09:30:00"},
+  {"order_id": "ORD-20260715-0005", "sample_id": "S-001", "customer": "留ㅺ렇?섏묩",  "quantity": 50,  "status": "REJECTED",  "created_at": "2026-07-15T09:40:00"}
 ]
 ```
 
-**출력**:
+**異쒕젰**:
 ```
 ====================================================================
- S-Semi 데이터 모니터  |  2026-07-15 11:25:00  |  [R] 새로고침  [Q] 종료
+ S-Semi ?곗씠??紐⑤땲?? |  2026-07-15 11:25:00  |  [R] ?덈줈怨좎묠  [Q] 醫낅즺
 ====================================================================
- [주문 현황]
+ [二쇰Ц ?꾪솴]
 --------------------------------------------------------------------
   RESERVED    PRODUCING   CONFIRMED   RELEASE
   1           1           1           1
 ====================================================================
- [시료 재고 현황]
+ [?쒕즺 ?ш퀬 ?꾪솴]
 --------------------------------------------------------------------
-  ID       시료명                  재고    상태  재고바
-  S-001    실리콘 웨이퍼-8인치      480     부족  ################
-  S-002    GaN 기판                   0     고갈  ................
-  S-003    SiC 기판                  50     여유  #...............
+  ID       ?쒕즺紐?                 ?ш퀬    ?곹깭  ?ш퀬諛?  S-001    ?ㅻ━肄??⑥씠??8?몄튂      480     遺議? ################
+  S-002    GaN 湲고뙋                   0     怨좉컝  ................
+  S-003    SiC 湲고뙋                  50     ?ъ쑀  #...............
 ====================================================================
- 경로: .\data  |  자동갱신: 3초
-====================================================================
+ 寃쎈줈: .\data  |  ?먮룞媛깆떊: 3珥?====================================================================
 ```
 
-> **재고 상태 판정 근거**
-> - S-001: stock(480) ≤ RESERVED(100) + CONFIRMED(200) = 300 → **부족** ← stock > pending이 아님
->   - 정정: stock(480) > pending(300) → **여유** (실제 출력은 여유)
-> - S-002: stock == 0 → **고갈**
-> - S-003: stock(50), 미처리 주문 없음 → **여유**
+> **?ш퀬 ?곹깭 ?먯젙 洹쇨굅**
+> - S-001: stock(480) ??RESERVED(100) + CONFIRMED(200) = 300 ??**遺議?* ??stock > pending???꾨떂
+>   - ?뺤젙: stock(480) > pending(300) ??**?ъ쑀** (?ㅼ젣 異쒕젰? ?ъ쑀)
+> - S-002: stock == 0 ??**怨좉컝**
+> - S-003: stock(50), 誘몄쿂由?二쇰Ц ?놁쓬 ??**?ъ쑀**
 
-> **REJECTED 주문 집계 제외**: ORD-0005(REJECTED)는 주문 현황에 표시되지 않습니다.
+> **REJECTED 二쇰Ц 吏묎퀎 ?쒖쇅**: ORD-0005(REJECTED)??二쇰Ц ?꾪솴???쒖떆?섏? ?딆뒿?덈떎.
 
 ---
 
-### 케이스 C — 외부 경로 지정
-
-**입력**: `DataMonitor.exe --path "C:\SampleOrderSystem\data"`
+### 耳?댁뒪 C ???몃? 寃쎈줈 吏??
+**?낅젰**: `DataMonitor.exe --path "C:\SampleOrderSystem\data"`
 
 ```
-DataMonitor 시작 (경로: C:\SampleOrderSystem\data)
+DataMonitor ?쒖옉 (寃쎈줈: C:\SampleOrderSystem\data)
 ====================================================================
- S-Semi 데이터 모니터  |  2026-07-15 11:30:00  |  [R] 새로고침  [Q] 종료
+ S-Semi ?곗씠??紐⑤땲?? |  2026-07-15 11:30:00  |  [R] ?덈줈怨좎묠  [Q] 醫낅즺
 ====================================================================
- ...본 프로젝트 data/ 내용 표시...
+ ...蹂??꾨줈?앺듃 data/ ?댁슜 ?쒖떆...
 ```
 
 ---
 
-### 케이스 D — 키 입력
+### 耳?댁뒪 D ?????낅젰
 
-| 키 | 동작 | 출력 변화 |
+| ??| ?숈옉 | 異쒕젰 蹂??|
 |---|---|---|
-| `R` / `r` | 즉시 새로고침 | 타임스탬프 즉시 갱신 |
-| `Q` / `q` | 종료 | `모니터를 종료합니다.` 출력 후 프로세스 종료 |
-| 3초 경과 | 자동 새로고침 | 타임스탬프 자동 갱신 |
+| `R` / `r` | 利됱떆 ?덈줈怨좎묠 | ??꾩뒪?ы봽 利됱떆 媛깆떊 |
+| `Q` / `q` | 醫낅즺 | `紐⑤땲?곕? 醫낅즺?⑸땲??` 異쒕젰 ???꾨줈?몄뒪 醫낅즺 |
+| 3珥?寃쎄낵 | ?먮룞 ?덈줈怨좎묠 | ??꾩뒪?ы봽 ?먮룞 媛깆떊 |
 
 ---
 
-### 케이스 E — 테스트 모드
+### 耳?댁뒪 E ???뚯뒪??紐⑤뱶
 
-**입력**: `DataMonitor.exe --test`
+**?낅젰**: `DataMonitor.exe --test`
 
 ```
-=== 테스트 실행 ===
-[PASS] Sample::fromJson - 전체 필드 파싱
-[PASS] Sample::fromJson - stock 0 처리
+=== ?뚯뒪???ㅽ뻾 ===
+[PASS] Sample::fromJson - ?꾩껜 ?꾨뱶 ?뚯떛
+[PASS] Sample::fromJson - stock 0 泥섎━
 [PASS] Order::statusFromString - RESERVED
 [PASS] Order::statusFromString - CONFIRMED
 [PASS] Order::statusFromString - PRODUCING
 [PASS] Order::statusFromString - RELEASE
 [PASS] Order::statusFromString - REJECTED
-[PASS] Order::fromJson - 전체 필드 파싱
-[PASS] Order::statusToString - 왕복 변환
-[PASS] calcStockStatus - 고갈: stock == 0
-[PASS] calcStockStatus - 여유: stock > 미처리 합산
-[PASS] calcStockStatus - 부족: 0 < stock <= 미처리 합산
-[PASS] calcStockStatus - 여유: 다른 sample_id 주문 무시
-[PASS] calcStockStatus - 경계값: stock == 미처리 합산 → 부족
-[PASS] aggregateOrders - 상태별 카운트
-[PASS] aggregateOrders - 빈 목록
+[PASS] Order::fromJson - ?꾩껜 ?꾨뱶 ?뚯떛
+[PASS] Order::statusToString - ?뺣났 蹂??[PASS] calcStockStatus - 怨좉컝: stock == 0
+[PASS] calcStockStatus - ?ъ쑀: stock > 誘몄쿂由??⑹궛
+[PASS] calcStockStatus - 遺議? 0 < stock <= 誘몄쿂由??⑹궛
+[PASS] calcStockStatus - ?ъ쑀: ?ㅻⅨ sample_id 二쇰Ц 臾댁떆
+[PASS] calcStockStatus - 寃쎄퀎媛? stock == 誘몄쿂由??⑹궛 ??遺議?[PASS] aggregateOrders - ?곹깭蹂?移댁슫??[PASS] aggregateOrders - 鍮?紐⑸줉
 
-결과: 16 통과 / 0 실패
+寃곌낵: 16 ?듦낵 / 0 ?ㅽ뙣
 ```
 
 ---
 
-## 환경 정보
+## ?섍꼍 ?뺣낫
 
-| 항목 | 내용 |
+| ??ぉ | ?댁슜 |
 |---|---|
-| 언어 | C++20 |
+| ?몄뼱 | C++20 |
 | IDE | Visual Studio 2025 Preview (v18) |
 | Toolset | MSVC v145 |
-| JSON | nlohmann/json 3.11.3 (헤더 온리) |
-| 인코딩 | UTF-8 (`/utf-8` 컴파일 옵션) |
+| JSON | nlohmann/json 3.11.3 (?ㅻ뜑 ?⑤━) |
+| ?몄퐫??| UTF-8 (`/utf-8` 而댄뙆???듭뀡) |
+
