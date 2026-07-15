@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일"><UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일"><UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier></Filter>
+    <Filter Include="소스 파일\model"><UniqueIdentifier>{A0000001-0000-0000-0000-000000000001}</UniqueIdentifier></Filter>
+    <Filter Include="소스 파일\repository"><UniqueIdentifier>{A0000002-0000-0000-0000-000000000002}</UniqueIdentifier></Filter>
+    <Filter Include="소스 파일\view"><UniqueIdentifier>{A0000003-0000-0000-0000-000000000003}</UniqueIdentifier></Filter>
+    <Filter Include="소스 파일\controller"><UniqueIdentifier>{A0000004-0000-0000-0000-000000000004}</UniqueIdentifier></Filter>
+    <Filter Include="소스 파일\test"><UniqueIdentifier>{A0000005-0000-0000-0000-000000000005}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\model"><UniqueIdentifier>{B0000001-0000-0000-0000-000000000001}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\repository"><UniqueIdentifier>{B0000002-0000-0000-0000-000000000002}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\view"><UniqueIdentifier>{B0000003-0000-0000-0000-000000000003}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\controller"><UniqueIdentifier>{B0000004-0000-0000-0000-000000000004}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\test"><UniqueIdentifier>{B0000005-0000-0000-0000-000000000005}</UniqueIdentifier></Filter>
+    <Filter Include="헤더 파일\third_party"><UniqueIdentifier>{B0000006-0000-0000-0000-000000000006}</UniqueIdentifier></Filter>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClCompile Include="main.cpp"><Filter>소스 파일</Filter></ClCompile>
+    <ClCompile Include="model\Sample.cpp"><Filter>소스 파일\model</Filter></ClCompile>
+    <ClCompile Include="model\Order.cpp"><Filter>소스 파일\model</Filter></ClCompile>
+    <ClCompile Include="repository\SampleRepository.cpp"><Filter>소스 파일\repository</Filter></ClCompile>
+    <ClCompile Include="repository\OrderRepository.cpp"><Filter>소스 파일\repository</Filter></ClCompile>
+    <ClCompile Include="view\MonitorView.cpp"><Filter>소스 파일\view</Filter></ClCompile>
+    <ClCompile Include="controller\MonitorController.cpp"><Filter>소스 파일\controller</Filter></ClCompile>
+    <ClCompile Include="test\SampleTest.cpp"><Filter>소스 파일\test</Filter></ClCompile>
+    <ClCompile Include="test\OrderTest.cpp"><Filter>소스 파일\test</Filter></ClCompile>
+    <ClCompile Include="test\MonitorControllerTest.cpp"><Filter>소스 파일\test</Filter></ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="model\Sample.h"><Filter>헤더 파일\model</Filter></ClInclude>
+    <ClInclude Include="model\Order.h"><Filter>헤더 파일\model</Filter></ClInclude>
+    <ClInclude Include="repository\SampleRepository.h"><Filter>헤더 파일\repository</Filter></ClInclude>
+    <ClInclude Include="repository\OrderRepository.h"><Filter>헤더 파일\repository</Filter></ClInclude>
+    <ClInclude Include="view\MonitorView.h"><Filter>헤더 파일\view</Filter></ClInclude>
+    <ClInclude Include="controller\MonitorController.h"><Filter>헤더 파일\controller</Filter></ClInclude>
+    <ClInclude Include="test\TestRunner.h"><Filter>헤더 파일\test</Filter></ClInclude>
+    <ClInclude Include="third_party\json.hpp"><Filter>헤더 파일\third_party</Filter></ClInclude>
+  </ItemGroup>
+</Project>

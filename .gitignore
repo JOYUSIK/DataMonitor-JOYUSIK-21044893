@@ -1,0 +1,8 @@
+x64/
+Debug/
+Release/
+.vs/
+*.user
+*.VC.db
+*.VC.opendb
+DataMonitor/data/*.json
