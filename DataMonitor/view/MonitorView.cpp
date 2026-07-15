@@ -18,9 +18,17 @@ void MonitorView::printDashboard(
     const std::vector<Order>& orders,
     const std::map<OrderStatus, int>& counts) const
 {
-    // 화면 지우기
-    COORD coord = {0, 0};
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    // 화면 지우기: 버퍼 전체를 공백으로 채운 뒤 커서 (0,0) 복귀
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if (GetConsoleScreenBufferInfo(hOut, &csbi)) {
+        DWORD cells = csbi.dwSize.X * csbi.dwSize.Y;
+        COORD origin = {0, 0};
+        DWORD written;
+        FillConsoleOutputCharacter(hOut, ' ', cells, origin, &written);
+        FillConsoleOutputAttribute(hOut, csbi.wAttributes, cells, origin, &written);
+        SetConsoleCursorPosition(hOut, origin);
+    }
 
     auto get = [&](OrderStatus s) {
         auto it = counts.find(s);

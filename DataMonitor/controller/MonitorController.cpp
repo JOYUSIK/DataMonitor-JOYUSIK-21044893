@@ -2,29 +2,47 @@
 #include "repository/SampleRepository.h"
 #include "repository/OrderRepository.h"
 #include "view/MonitorView.h"
-#include <conio.h>
 #define NOMINMAX
 #include <windows.h>
 
-static const int REFRESH_INTERVAL_SEC = 3;
+static const DWORD REFRESH_INTERVAL_MS = 3000;
 
 MonitorController::MonitorController(const std::string& dataPath)
     : dataPath_(dataPath) {}
 
 void MonitorController::run() {
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    // 마우스/창 이벤트를 ReadConsoleInput이 받을 수 있도록 모드 설정
+    DWORD prevMode = 0;
+    GetConsoleMode(hIn, &prevMode);
+    SetConsoleMode(hIn, ENABLE_EXTENDED_FLAGS | ENABLE_PROCESSED_INPUT);
+
     MonitorView view;
     while (true) {
         refresh();
 
-        // REFRESH_INTERVAL_SEC 동안 100ms 단위로 키 감지
-        for (int i = 0; i < REFRESH_INTERVAL_SEC * 10; ++i) {
-            Sleep(100);
-            if (_kbhit()) {
-                char c = static_cast<char>(_getch());
-                if (c == 'q' || c == 'Q') { view.printExit(); return; }
-                if (c == 'r' || c == 'R') break;
+        // 최대 REFRESH_INTERVAL_MS 대기, 키 이벤트만 처리
+        DWORD result = WaitForSingleObject(hIn, REFRESH_INTERVAL_MS);
+        if (result == WAIT_OBJECT_0) {
+            INPUT_RECORD records[8];
+            DWORD numRead = 0;
+            ReadConsoleInput(hIn, records, 8, &numRead);
+
+            for (DWORD i = 0; i < numRead; ++i) {
+                if (records[i].EventType != KEY_EVENT) continue;
+                if (!records[i].Event.KeyEvent.bKeyDown)  continue;
+
+                char c = records[i].Event.KeyEvent.uChar.AsciiChar;
+                if (c == 'q' || c == 'Q') {
+                    SetConsoleMode(hIn, prevMode);
+                    view.printExit();
+                    return;
+                }
+                // R 또는 다른 키 → 타임아웃 없이 즉시 새로고침
             }
         }
+        // WAIT_TIMEOUT → 자동 새로고침
     }
 }
 
